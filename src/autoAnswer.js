@@ -3,7 +3,7 @@
     @CreateTime 2020/5/4
     @Done 2020 5/5
 */
-const EventEm = require('events')
+const Event = require('events')
 const http = require('http')
 const fs = require('fs')
 let urls = {
@@ -14,10 +14,11 @@ let urls = {
     user_passwd: '2032010317',
     passwd: null
 }
-let eventNext = new EventEm()
 let QuestionBanks = require('./QuestionBank.json')
-class AutoAnswer {
+class AutoAnswer extends Event{
     constructor(username, passwd) {
+        // init super attributes
+        super()
         this.codes = {
             // sourcecdode,code nothing useful
             sourcecdode: '%23include%3Cstdio.h%3E%0D%0Avoid+main%28%29%0D%0A%7B%0D%0A++++printf%28%22hello+world%22%29%3B%0D%0A%7D',
@@ -28,16 +29,10 @@ class AutoAnswer {
         this.token = ''
         this.doneTime = 25.0
         this.time_ms = 12000
-        try {
-            this.main()
-        } catch (e) {
-            if (e) console.log(e);
-        }
-
     }
     async login() {
         // As Client
-        http.ClientRequest
+        // http.ClientRequest
         // req
         return new Promise((reslove, rej) => {
             let req = http.request(urls.login, {
@@ -51,11 +46,18 @@ class AutoAnswer {
             req.addListener('response', res => {
                 // http.IncomingMessage 
                 // res    
-                reslove(
-                    res.headers['set-cookie'].map(item => {
-                        return item.split(';')[0]
-                    })
-                )
+                res.addListener('data',data=>{
+                    console.log(data.toString());
+                    if(/info/.test(data.toString())){
+                       reslove('error')
+                       return null
+                    }
+                    reslove(
+                        res.headers['set-cookie'].map(item => {
+                            return item.split(';')[0]
+                        })
+                    )
+                })
             })
         })
 
@@ -132,7 +134,7 @@ class AutoAnswer {
             if (init >= QuestionBanks.length) {
                 // cancel timer but current callback still continue 
                 clearInterval(stop)
-                eventNext.emit('Done')
+                this.emit('Done')
                 // stop current callback 
                 return console.log("async_task_done");
             }
@@ -140,7 +142,7 @@ class AutoAnswer {
             this.verifyToken = await this.__RequestVerificationToken(this.token, problem)
             await this.solution_submit(this.verifyToken, this.token, this.codes, submit)
             init++
-        },1000)
+        },this.time_ms)
         // function is return ，but async task still In the async task queue
         return `asycn_stak_start-${this.username}`
     }
@@ -158,10 +160,9 @@ class AutoAnswer {
     }
     async main() {
         // next task 
-        eventNext.once('Done', async () => {
+        this.once('Done', async () => {
             // 300 submit target: default 1003
-            let status = await this.loop_sub_(1)
-            console.log(status);
+            await this.loop_sub_(300)
         })
         // login
         this.token = await this.login()
@@ -170,18 +171,17 @@ class AutoAnswer {
             @params subject init pos 
             @range 0-61
         */
-        let status = await this.submitSetInterval(62)
-        console.log(status);
+        await this.submitSetInterval(0)
     }
 
 }
-
+module.exports = {AutoAnswer,urls,QuestionBanks}
 // new auto_Answer(urls.user_passwd, urls.user_passwd)
-let data = fs.readFileSync('./user.json',{encoding:'utf-8',flag:'r+'})
+/* let data = fs.readFileSync('./user.json',{encoding:'utf-8',flag:'r+'})
 // Object deep Copy use JSON.parse()
 for (const iter of JSON.parse(data)) {
     new AutoAnswer(iter.user,iter.paswd)
-}
+} */
 // new AutoAnswer(2032010301, 2032010301)
 // new AutoAnswer(2037030111, 2037030111)
 

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- take of router path -->
+    <script src="./vue.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #box {
+            display: flex;
+            flex-flow: column wrap;
+        }
+
+        input {
+            height: 22px;
+            width: 220px;
+        }
+
+        input[type=button] {
+            width: 228px;
+            height: 30px;
+            /* cursor: not-allowed; */
+        }
+
+        #box span {
+            height: 30px;
+            line-height: 30px;
+            color: red;
+        }
+
+        .sendWin {
+            top: -70px;
+            height: 70px;
+            width: 25vw;
+            background-color: white;
+            position: absolute;
+            /* transform: translateY(70px) */
+            transition: top 1s;
+        }
+
+        .title {
+            text-align: center;
+            padding: 8px 0px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id='box'>
+        <div class="title">江西制造学院自动刷题</div>
+        <div><input type="text"  v-model="username"></div>
+        <span>{{userMsg}}</span>
+        <div> <input type="password" v-model="password"></div>
+        <span>{{passMsg}}</span>
+        <input type="button" ref=button @click.prevent="fetchSubmit" value="白嫖">
+    </div>
+    <script>
+        let vm = new Vue({
+            el: "#box",
+            data: {
+                username: "",
+                password: "",
+                userMsg: "",
+                passMsg: ""
+            },
+            methods: {
+                fetchSubmit() {
+                    let data = {
+                        "user": this.username.trim(),
+                        "paswd": this.password.trim()
+                    }
+                    fetch('/autoAnswer', {
+                        method: "POST",
+                        headers: {
+                            // must params 
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(data)
+                    })
+                        .then(rsp => rsp.text())
+                        .then(res => {
+                            if(res){
+                                this.passMsg = res
+                            }
+                        })
+                }
+            },
+        })
+    </script>
+</body>
+
+</html>
