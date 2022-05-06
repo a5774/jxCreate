@@ -107,7 +107,7 @@ class AutoAnswer {
         req.end()
         req.addListener('response', res => {
             res.addListener('data', data => {
-                console.log(url+'done');
+                console.log(url+':is_done');
             })
         })
     }
@@ -127,41 +127,51 @@ class AutoAnswer {
          //  gen().next().value() */
     }
     async submitSetInterval(init = 0) {
-
         let stop = setInterval(async () => {
             // stop and enter next handler 
-            if (init > QuestionBanks.length) {
-                clearImmediate(stop)
+            if (init >= QuestionBanks.length) {
+                // cancel timer but current callback still continue 
+                clearInterval(stop)
                 eventNext.emit('Done')
+                // stop current callback 
+                return console.log("async_task_done");
             }
             let { problem, submit } = QuestionBanks[init]
             this.verifyToken = await this.__RequestVerificationToken(this.token, problem)
             await this.solution_submit(this.verifyToken, this.token, this.codes, submit)
             init++
-        }, this.time_ms)
+        },1000)
         // function is return ，but async task still In the async task queue
-        return null
+        return `asycn_stak_start-${this.username}`
     }
-    async loop_sub_() {
-        setInterval(async () => {
-            let verifyToken = await this.__RequestVerificationToken(this.token, urls.problem)
+    async loop_sub_(count) {
+       let stop =  setInterval(async () => {
+           if(count == 0){
+               clearInterval(stop)
+               return console.log("loop_asnyc_task_done");
+           }
+            let verifyToken = await this.__RequestVerificationToken(this.token,urls.problem)
             this.solution_submit(verifyToken, this.token, this.codes, urls.submit)
+            count--;
         }, this.time_ms)
+        return `loop_async_task_start${this.username}`
     }
-
     async main() {
         // next task 
-        eventNext.once('Done', () => {
+        eventNext.once('Done', async () => {
             // 300 submit target: default 1003
-            this.loop_sub_()
+            let status = await this.loop_sub_(1)
+            console.log(status);
         })
         // login
         this.token = await this.login()
         // 61 Answer
         /* 
             @params subject init pos 
+            @range 0-61
         */
-        this.submitSetInterval(0);
+        let status = await this.submitSetInterval(62)
+        console.log(status);
     }
 
 }
